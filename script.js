@@ -13,11 +13,12 @@ bot.join(channel);
 bot.addListener('message', function (from, to, message) { 
 
 	if(!message.substring(0,1)=="$")
+		
 		return;
 
 	 
-	message = message.substring(1);
 	console.log(message);
+	message = message.substring(1);
 	var cmd = message.split(' ')[0];
 
 	switch(cmd) {
