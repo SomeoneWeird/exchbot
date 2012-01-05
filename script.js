@@ -58,7 +58,7 @@ function register(from, to, message) {
 	db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
   		
   		rows.forEach(function (row) {
-    		if(row['nick']) { 
+    		if(row['nick']!=undefined) { 
 	    		bot.say(channel, from + ": Successfully registered user " + nick + " with GPG key " + gpg); 
 		    } else {
 		    	bot.say(channel, from + ": There was an error registering, please try again later or contact an admin.");
