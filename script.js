@@ -12,40 +12,42 @@ bot.join(channel);
 
 bot.addListener('message', function (from, to, message) { 
 
-	if(message.substring(0,1)=="$") {
-	 
-		message = message.substring(1);
-		console.log(message);
-		var cmd = message.split(' ')[0];
-
-		switch(cmd) {
-
-			case "register": register(from, to, message);
-				break;
-			case "test": intserttest();
-				break;
-
-		}
-
-	} else {
+	if(!message.substring(0,1)=="$")
 		return;
+
+	 
+	message = message.substring(1);
+	console.log(message);
+	var cmd = message.split(' ')[0];
+
+	switch(cmd) {
+
+		case "register": register(from, to, message);
+			break;
+		case "test": intserttest();
+			break;
+
 	}
+
 
 });
 
 function register(from, to, message) { 
 
-	var args = message.split(" ");
-	var nick = args[1];
-	var gpg = args[2];
-	var reg = 0;
+	var args = message.split(" "),
+	    nick = args[1],
+	    gpg = args[2],
+	    reg = 0;
 
 	
 	db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
   		
 
   		rows.forEach(function (row) {
-    		if(row!=undefined) { return; }
+    		if(row!=undefined) { 
+	    		bot.say(channel, from + ": This nick is already being used...");
+	    		return;
+	    	}
 		});
 
   	});	
