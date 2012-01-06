@@ -13,7 +13,6 @@ bot.join(channel);
 bot.addListener('message', function (from, to, message) { 
 
 	if(!message.substring(0,1)=="$")
-		
 		return;
 
 	 
@@ -25,7 +24,9 @@ bot.addListener('message', function (from, to, message) {
 
 		case "register": register(from, to, message);
 			break;
-		case "test": intserttest();
+		case "login": requestauth(from, to, message);
+			break;
+		case "test": inserttest();
 			break;
 
 	}
@@ -41,39 +42,65 @@ function register(from, to, message) {
 	    reg = 0;
 
 	
+	db.each("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, row) {	
+
+  		//rows.forEach(function (row) {
+
+    		//console.log(JSON.stringify(row));
+  			//bot.say(channel, from + ": This nick is already being used...");
+    		reg = 1;
+		   	
+		//});
+
+  	});	
+
+  	console.log(reg + " wut");
+
+  	if(reg==0) {
+	  	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?)");
+		stmt.run(null, nick, gpg, null, null);
+
+		db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
+	  		
+	  		rows.forEach(function (row) {
+	    		if(row['nick']!="undefined") { 
+		    		bot.say(channel, from + ": Successfully registered user " + nick + " with GPG key " + gpg); 
+			    } else {
+			    	bot.say(channel, from + ": There was an error registering, please try again later or contact an admin.");
+			    }
+			});
+
+	  	});	
+	}
+		
+}
+
+function requestauth(from, to, message) {
+	
+	var args = message.split(" "),
+	    nick = args[1];
+	  
 	db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
   		
 
   		rows.forEach(function (row) {
-    		if(row!=undefined) { 
-	    		bot.say(channel, from + ": This nick is already being used...");
-	    		return;
+  			console.log(typeof(row));
+    		if(row) {
+    			bot.say(channel, "$link$");
+	    	} else {
+	    		bot.say(channel, nick + ": That username doesn't exist...");
 	    	}
 		});
 
   	});	
+	
 
-  	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?)");
-	stmt.run(null, nick, gpg, null, null);
-
-	db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
-  		
-  		rows.forEach(function (row) {
-    		if(row['nick']!=undefined) { 
-	    		bot.say(channel, from + ": Successfully registered user " + nick + " with GPG key " + gpg); 
-		    } else {
-		    	bot.say(channel, from + ": There was an error registering, please try again later or contact an admin.");
-		    }
-		});
-
-  	});	
-		
 }
 
 function inserttest() {
 	
 	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?);");
-  	stmt.run(0, "test", "test", "", "");
+  	stmt.run(null, "test", "test", "", "");
   	stmt.finalize();
 
 }
