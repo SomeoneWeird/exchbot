@@ -64,42 +64,49 @@ function register(from, to, message) {
 	var args = message.split(" "),
 	    nick = args[1],
 	    gpg = args[2];
-	    
-	db.query().
-        select('*').
-        from('users').
-        where('nick = ?', [ nick ]).
-        execute(function(error, rows, cols) {
 
-                if (error) {
-                        console.log('ERROR: ' + error);
-                        return;
-                }
+	if(!((gpg.length==6)||(gpg.length==8))){
+		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
+	} else {
+			    
+		db.query().
+	        select('*').
+	        from('users').
+	        where('nick = ?', [ nick ]).
+	        execute(function(error, rows, cols) {
 
-                if(rows.length==0) {
-                	
-                	db.query().
-		        		insert('users',
-		            		[ 'nick', 'gpgkey' ],
-		            		[ nick, gpg ]
-		        		).
-		        		execute(function(error, result) {
-		                	if (error) {
-		                        console.log('ERROR: ' + error);
-		                        return;
-		                	} else {
-		                		console.log('GENERATED id: ' + result.id);
-		                		bot.say(channel, from + ": Successfully registered.");
-							}
-		       			});
-                } else {
+	                if (error) {
+	                        console.log('ERROR: ' + error);
+	                        return;
+	                }
 
-                	bot.say(channel, from + ": Nickname already in use, please try again.");
+	                if(rows.length==0) {
+	                	
+	                	db.query().
+			        		insert('users',
+			            		[ 'nick', 'gpgkey' ],
+			            		[ nick, gpg ]
+			        		).
+			        		execute(function(error, result) {
+			                	if (error) {
+			                        console.log('ERROR: ' + error);
+			                        return;
+			                	} else {
+			                		console.log('GENERATED id: ' + result.id);
+			                		bot.say(channel, from + ": Successfully registered.");
+								}
+			       			});
 
-                }
+	                } else {
 
-                
-        });
+	                	bot.say(channel, from + ": Nickname already in use, please try again.");
+
+	                }
+
+	                
+	        });
+
+	}
 		
 }
 
