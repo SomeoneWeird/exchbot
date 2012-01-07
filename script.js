@@ -121,9 +121,7 @@ function register(from, to, message) {
 
 function inserttest() {
 	
-	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?);");
-  	stmt.run(null, "test", "test", "", "");
-  	stmt.finalize();
+  	db.query().insert('users', [ 'nick', 'gpgkey' ], [ nick, gpg ] ).execute(function(e, r) {});
 
 }
 
