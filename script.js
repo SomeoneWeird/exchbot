@@ -1,4 +1,6 @@
 var irc = require('irc');
+var util = require('util');
+var exec = require('child_process').exec;
 var mysql = require('db-mysql');
 var db = new mysql.Database({
 					hostname: 'localhost',
@@ -6,6 +8,8 @@ var db = new mysql.Database({
 					password: 'exchbot',
 					database: 'exchbot'
 			})
+
+
 
 
 
@@ -69,7 +73,9 @@ function register(from, to, message) {
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
 	} else {
 			    
-		db.query().
+		if(getPGPkey(gpg)==1) {
+			
+			db.query().
 	        select('*').
 	        from('users').
 	        where('nick = ?', [ nick ]).
@@ -105,6 +111,8 @@ function register(from, to, message) {
 
 	                
 	        });
+	    
+		}
 
 	}
 		
@@ -116,6 +124,22 @@ function inserttest() {
 	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?);");
   	stmt.run(null, "test", "test", "", "");
   	stmt.finalize();
+
+}
+
+// Retrieve GPG key from mit.pgp.edu
+
+function getGPGkey(keyid) {
+	
+	var process = exec("gpg --keyserver pgp.mit.edu --recv-key 0x" + keyid, function(err, stdout, stderr) {
+		
+		if(!((err)||(stderr))) {
+			return 1;
+		}
+		console.log(stdout);
+		return 0;
+
+	});
 
 }
 
