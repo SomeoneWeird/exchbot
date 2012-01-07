@@ -1,6 +1,15 @@
 var irc = require('irc');
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('users.sqlite');
+var mysql = require('db-mysql');
+var db = new mysql.Database({
+					hostname: 'localhost',
+					user: 'exchbot',
+					password: 'exchbot',
+					database: 'exchbot'
+			})
+
+
+
+// Setup IRC bot.
 
 var channel = "#exchbot";
 
@@ -9,6 +18,22 @@ var bot = new irc.Client('irc.freenode.net', 'ExchBot', {
 });
 
 bot.join(channel);
+
+// Set Database events.
+
+db.on('error', function(error) {
+    console.log('ERROR: ' + error);
+});
+
+db.on('ready', function(server) {
+    console.log('Connected to database.');
+});
+
+// Connect to database
+
+db.connect();
+
+// Add IRC listeners
 
 bot.addListener('message', function (from, to, message) { 
 
@@ -24,8 +49,8 @@ bot.addListener('message', function (from, to, message) {
 
 		case "register": register(from, to, message);
 			break;
-		case "login": requestauth(from, to, message);
-			break;
+		//case "login": requestauth(from, to, message);
+		//	break;
 		case "test": inserttest();
 			break;
 
@@ -39,63 +64,46 @@ function register(from, to, message) {
 	var args = message.split(" "),
 	    nick = args[1],
 	    gpg = args[2],
-	    reg = 0;
+	    inuse = 0;
+	    
+	db.query().
+        select('*').
+        from('users').
+        where('nick = ?', [ nick ]).
+        execute(function(error, rows, cols) {
 
-	
-	db.each("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, row) {	
+                if (error) {
+                        console.log('ERROR: ' + error);
+                        return;
+                }
 
-  		//rows.forEach(function (row) {
+                if(rows.length==0) {
+                	
+                	db.query().
+		        		insert('users',
+		            		[ 'nick', 'gpgkey' ],
+		            		[ nick, gpg ]
+		        		).
+		        		execute(function(error, result) {
+		                	if (error) {
+		                        console.log('ERROR: ' + error);
+		                        return;
+		                	} else {
+		                		console.log('GENERATED id: ' + result.id);
+		                		bot.say(channel, from + ": Successfully registered.");
+							}
+		       			});
+                } else {
 
-    		//console.log(JSON.stringify(row));
-  			//bot.say(channel, from + ": This nick is already being used...");
-    		reg = 1;
-		   	
-		//});
+                	bot.say(channel, from + ": Nickname already in use, please try again.");
 
-  	});	
+                }
 
-  	console.log(reg + " wut");
-
-  	if(reg==0) {
-	  	var stmt = db.prepare("INSERT INTO users VALUES (?, ?, ?, ?, ?)");
-		stmt.run(null, nick, gpg, null, null);
-
-		db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
-	  		
-	  		rows.forEach(function (row) {
-	    		if(row['nick']!="undefined") { 
-		    		bot.say(channel, from + ": Successfully registered user " + nick + " with GPG key " + gpg); 
-			    } else {
-			    	bot.say(channel, from + ": There was an error registering, please try again later or contact an admin.");
-			    }
-			});
-
-	  	});	
-	}
+                
+        });
 		
 }
 
-function requestauth(from, to, message) {
-	
-	var args = message.split(" "),
-	    nick = args[1];
-	  
-	db.all("SELECT * FROM users WHERE nick = '" + nick + "' LIMIT 1;", function(err, rows) {
-  		
-
-  		rows.forEach(function (row) {
-  			console.log(typeof(row));
-    		if(row) {
-    			bot.say(channel, "$link$");
-	    	} else {
-	    		bot.say(channel, nick + ": That username doesn't exist...");
-	    	}
-		});
-
-  	});	
-	
-
-}
 
 function inserttest() {
 	
@@ -105,6 +113,7 @@ function inserttest() {
 
 }
 
+// Catch exceptions
 
 process.on('uncaughtException',function(error){
 
