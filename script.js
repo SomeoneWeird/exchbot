@@ -63,8 +63,7 @@ function register(from, to, message) {
 
 	var args = message.split(" "),
 	    nick = args[1],
-	    gpg = args[2],
-	    inuse = 0;
+	    gpg = args[2];
 	    
 	db.query().
         select('*').
