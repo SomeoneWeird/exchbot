@@ -65,7 +65,7 @@ function register(from, to, message) {
 	    nick = args[1],
 	    gpg = args[2];
 
-	if(!((gpg.length==6)||(gpg.length==8))){
+	if(!((gpg.length==8)||(gpg.length==16))){
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
 	} else {
 			    
