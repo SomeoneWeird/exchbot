@@ -73,7 +73,7 @@ function register(from, to, message) {
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
 	} else {
 			    
-		if(getPGPkey(gpg)==1) {
+		if(getGPGkey(gpg)==1) {
 			
 			db.query().
 	        select('*').
@@ -120,7 +120,7 @@ function register(from, to, message) {
 
 
 function inserttest() {
-	
+
   	db.query().insert('users', [ 'nick', 'gpgkey' ], [ nick, gpg ] ).execute(function(e, r) {});
 
 }
