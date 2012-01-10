@@ -61,6 +61,8 @@ bot.addListener('message', function (from, to, message) {
 			break;
 		case "verify": verifyauth(from, to, message);
 			break;
+		case "logout": logout(from);
+			break;
 
 	}
 
@@ -76,7 +78,7 @@ function register(from, to, message) {
 	    email = args[3];
 
 	if(!((gpg.length==8)||(gpg.length==16))){
-		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
+		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 character Key ID.");
 	} else {
 			    console.log("register2")
 			db.query().
@@ -214,6 +216,13 @@ function login(nick, from) {
 	user.user = from;
 	users.push(JSON.stringify(user)); 
 
+}
+
+// Log the user out...
+
+function logout(nick) {
+	users.pop(nick);
+	bot.say(channel, nick + ": You are now logged out.");
 }
 
 // Not used yet.
