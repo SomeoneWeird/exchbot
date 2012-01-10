@@ -55,8 +55,6 @@ bot.addListener('message', function (from, to, message) {
 			break;
 		//case "login": requestauth(from, to, message);
 		//	break;
-		case "test": inserttest();
-			break;
 
 	}
 
@@ -73,7 +71,7 @@ function register(from, to, message) {
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
 	} else {
 			    
-		if(getGPGkey(gpg)==1) {
+		if(getGPGkey(gpg)!=1) {
 			
 			db.query().
 	        select('*').
@@ -118,23 +116,16 @@ function register(from, to, message) {
 		
 }
 
-
-function inserttest() {
-
-  	db.query().insert('users', [ 'nick', 'gpgkey' ], [ nick, gpg ] ).execute(function(e, r) {});
-
-}
-
 // Retrieve GPG key from mit.pgp.edu
 
 function getGPGkey(keyid) {
 	
 	var process = exec("gpg --keyserver pgp.mit.edu --recv-key 0x" + keyid, function(err, stdout, stderr) {
-		
+
+		console.log(stdout);
 		if(!((err)||(stderr))) {
 			return 1;
 		}
-		console.log(stdout);
 		return 0;
 
 	});
