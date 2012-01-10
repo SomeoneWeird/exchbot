@@ -174,14 +174,12 @@ function verifyauth(from, to, message) {
 
 	    var temp = verify.split(":");
 	    var nick = temp[0];
-	    console.log(nick);
 
 	    db.query().
 	    	select("*").
 	    		from('users').
 	    			where("nick = ?", [ nick ] ).
 	    				execute(function(error, rows, cols) {
-	    					console.log('execute');
 	    					if(error) {
 	    						console.log(error);
 	    						return;
@@ -199,13 +197,11 @@ function verifyauth(from, to, message) {
 	    						}
 
 	    					} else {
-	    						console.log(rows);
 	    						bot.say(channel, from + ": Something went wrong, please try again later.");
 	    					}
 
 	    				});
 
-	    				console.log('aexecute');
 
 }
 
