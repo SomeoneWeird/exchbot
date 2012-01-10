@@ -2,6 +2,10 @@ var irc = require('irc');
 var util = require('util');
 var exec = require('child_process').exec;
 var mysql = require('db-mysql');
+var spawn = require('child_process').spawn;
+var carrier = require('carrier');
+var microtime = require('microtime');
+var gist = require('gist');
 var db = new mysql.Database({
 					hostname: 'localhost',
 					user: 'exchbot',
@@ -10,7 +14,7 @@ var db = new mysql.Database({
 			})
 
 
-
+var users = new Array();
 
 
 // Setup IRC bot.
@@ -53,8 +57,10 @@ bot.addListener('message', function (from, to, message) {
 
 		case "register": register(from, to, message);
 			break;
-		//case "login": requestauth(from, to, message);
-		//	break;
+		case "login": requestauth(from, to, message);
+			break;
+		case "verify": verifyauth(from, to, message);
+			break;
 
 	}
 
@@ -63,16 +69,16 @@ bot.addListener('message', function (from, to, message) {
 
 function register(from, to, message) { 
 
+	console.log("register")
 	var args = message.split(" "),
 	    nick = args[1],
-	    gpg = args[2];
+	    gpg = args[2],
+	    email = args[3];
 
 	if(!((gpg.length==8)||(gpg.length==16))){
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 Key ID.");
 	} else {
-			    
-		if(getGPGkey(gpg)!=1) {
-			
+			    console.log("register2")
 			db.query().
 	        select('*').
 	        from('users').
@@ -88,8 +94,8 @@ function register(from, to, message) {
 	                	
 	                	db.query().
 			        		insert('users',
-			            		[ 'nick', 'gpgkey' ],
-			            		[ nick, gpg ]
+			            		[ 'nick', 'gpgkey', 'email' ],
+			            		[ nick, gpg, email ]
 			        		).
 			        		execute(function(error, result) {
 			                	if (error) {
@@ -110,23 +116,126 @@ function register(from, to, message) {
 	                
 	        });
 	    
-		}
-
 	}
 		
 }
 
+// Request GPG authentication string
+
+function requestauth(from, to, message) {
+
+	var args = message.split(" "),
+	    nick = args[1];
+
+	var verifystring = nick + ":exchbot:" + microtime.now();
+
+	db.query().
+	        select('*').
+	        	from('users').
+	        		where('nick = ?', [ nick ]).
+	        			execute(function(error, rows, cols) {
+
+			                if (error) {
+			                        console.log('ERROR: ' + error);
+			                        return;
+			                }
+
+			              	if(rows.length==0) {
+			                	bot.say(channel, from + ": No such nickname, please register.");
+			                	return; 
+			                }
+			                
+
+			               	exec("echo \"" + verifystring + "\" > " + nick + ".txt");
+			                db.query().update('users').set({ 'verify': verifystring }).where('nick = ?', [nick]).execute(function(error, result) { if(error) console.log(err); });
+			               	exec('gpg -ae -r ' + rows[0].email + ' ' + nick + ".txt");
+							var proc = spawn('cat', [nick + ".txt.asc"]), my_carrier, out;
+							my_carrier = carrier.carry(proc.stdout);
+							my_carrier.on('line', function(line) {
+								out += line + "\n";
+							});
+
+							my_carrier.on('end', function(a) {
+								gist.create(out, function (url) {
+  								bot.say(channel, from + ": " + url);
+							});
+
+							exec("rm " + nick + ".txt " + nick + ".txt.asc");
+					});
+	                
+	        });
+	    
+}
+
+function verifyauth(from, to, message) {
+	
+		var args = message.split(" "),
+	    verify = args[1];
+
+	    var temp = verify.split(":");
+	    var nick = temp[0];
+	    console.log(nick);
+
+	    db.query().
+	    	select("*").
+	    		from('users').
+	    			where("nick = ?", [ nick ] ).
+	    				execute(function(error, rows, cols) {
+	    					console.log('execute');
+	    					if(error) {
+	    						console.log(error);
+	    						return;
+	    					} else if(rows.length>1) {
+	    						bot.say(channel, from + ": There seems to be more than 1 of that nick in the database, please contact an admin.");
+	    						return;
+	    					} else if(rows.length==1) {
+	    						
+	    						if(rows[0].verify==verify) {
+	    							bot.say(channel, from + ": You are now logged in..");
+	    							login(nick, from);
+	    							db.query().update('users').set({ 'verify': ''}).where("nick = ?", [ nick ]).execute(function(err, rows, cols) { if(err) console.log(err); });
+	    						} else {
+	    							bot.say(channel, from + ": Invalid verification string.");
+	    						}
+
+	    					} else {
+	    						console.log(rows);
+	    						bot.say(channel, from + ": Something went wrong, please try again later.");
+	    					}
+
+	    				});
+
+	    				console.log('aexecute');
+
+}
+
+// Actually log person in..
+
+function login(nick, from) {
+	
+	var user = new Object();
+	user.nick = nick;
+	user.user = from;
+	users.push(JSON.stringify(user)); 
+
+}
+
+// Not used yet.
 // Retrieve GPG key from mit.pgp.edu
 
-function getGPGkey(keyid) {
+function getGPGkey(keyid, cb) {
 	
 	var process = exec("gpg --keyserver pgp.mit.edu --recv-key 0x" + keyid, function(err, stdout, stderr) {
 
 		console.log(stdout);
-		if(!((err)||(stderr))) {
-			return 1;
-		}
-		return 0;
+		if(err)
+			console.log(err)
+		if(stderr)
+			console.log(stderr);
+
+		cb();
+		
+		
 
 	});
 
