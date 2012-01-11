@@ -63,6 +63,8 @@ bot.addListener('message', function (from, to, message) {
 			break;
 		case "logout": logout(from);
 			break;
+		case "rollcall": rollcall(from);
+			break;
 
 	}
 
@@ -224,6 +226,7 @@ function logout(nick) {
 	users.pop(nick);
 	bot.say(channel, nick + ": You are now logged out.");
 }
+
 
 // Not used yet.
 // Retrieve GPG key from mit.pgp.edu
