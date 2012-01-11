@@ -131,7 +131,8 @@ function requestauth(from, to, message) {
 	var args = message.split(" "),
 	    nick = args[1];
 
-	var verifystring = nick + ":exchbot:" + microtime.now();
+	var nonce = Math.floor(Math.random()*1000000000000001);
+	var verifystring = nick + ":exchbot:" + microtime.now() + ":" + nonce;
 
 	db.query().
 	        select('*').
