@@ -45,11 +45,9 @@ db.connect();
 
 bot.addListener('message', function (from, to, message) { 
 
-	if(!message.substring(0,1)=="$")
+	if(!message.substring(0,1)=="\$")
 		return;
 
-	 
-	console.log(message);
 	message = message.substring(1);
 	var cmd = message.split(' ')[0];
 
@@ -73,7 +71,6 @@ bot.addListener('message', function (from, to, message) {
 
 function register(from, to, message) { 
 
-	console.log("register")
 	var args = message.split(" "),
 	    nick = args[1],
 	    gpg = args[2],
@@ -82,7 +79,6 @@ function register(from, to, message) {
 	if(!((gpg.length==8)||(gpg.length==16))){
 		bot.say(channel, from + ": Invalid GPG Length, please submit your 8 or 16 character Key ID.");
 	} else {
-			    console.log("register2")
 			db.query().
 	        select('*').
 	        from('users').
@@ -129,10 +125,9 @@ function register(from, to, message) {
 function requestauth(from, to, message) {
 
 	var args = message.split(" "),
-	    nick = args[1];
-
-	var nonce = Math.floor(Math.random()*1000000000000001);
-	var verifystring = nick + ":exchbot:" + microtime.now() + ":" + nonce;
+	    nick = args[1],
+		nonce = Math.floor(Math.random()*1000000000000001),
+	    verifystring = nick + ":exchbot:" + microtime.now() + ":" + nonce;
 
 	db.query().
 	        select('*').
@@ -150,7 +145,7 @@ function requestauth(from, to, message) {
 			                	return; 
 			                }
 			                
-
+			                console.log(verifystring);
 			               	exec("echo \"" + verifystring + "\" > " + nick + ".txt");
 			                db.query().update('users').set({ 'verify': verifystring }).where('nick = ?', [nick]).execute(function(error, result) { if(error) console.log(err); });
 			               	exec('gpg -ae -r ' + rows[0].email + ' ' + nick + ".txt");
@@ -159,7 +154,6 @@ function requestauth(from, to, message) {
 							my_carrier.on('line', function(line) {
 								out += line + "\n";
 							});
-
 							my_carrier.on('end', function(a) {
 								gist.create(out, function (url) {
   								bot.say(channel, from + ": " + url);
@@ -175,10 +169,9 @@ function requestauth(from, to, message) {
 function verifyauth(from, to, message) {
 	
 		var args = message.split(" "),
-	    verify = args[1];
-
-	    var temp = verify.split(":");
-	    var nick = temp[0];
+	    verify = args[1],
+		temp = verify.split(":"),
+	    nick = temp[0];
 
 	    db.query().
 	    	select("*").
