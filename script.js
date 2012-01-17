@@ -66,11 +66,23 @@ bot.addListener('message', function (from, to, message) {
 			break;
 		case "rollcall": rollcall(from);
 			break;
-
+	
 	}
 
 
 });
+
+// Check if users logged in...
+
+function loggedin(from) {
+	
+	for(var i = 0; i < users.length; i++) {
+		if(loggedin[i].user==from) {
+			return true;
+		}
+		return false;
+	}
+}
 
 function register(from, to, message) { 
 
