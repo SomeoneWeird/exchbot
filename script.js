@@ -6,6 +6,9 @@ var spawn = require('child_process').spawn;
 var carrier = require('carrier');
 var microtime = require('microtime');
 var gist = require('gist');
+var mtgoxAPI = require('./mtgox.js');
+var mtgox = new mtgoxAPI({key : '93816bb2-0f46-4d81-b292-6e5256bda91a', secret : 'SaXHKw2vW7vXseK7IhiNf/TY7bgSqgSm+yvaFARgzw08RFZ04Z+MdKMqXY4aeRLDsIgXyU2SVphdBr81KSozyg=='});
+
 var db = new mysql.Database({
 					hostname: 'localhost',
 					user: 'exchbot',
@@ -62,6 +65,10 @@ bot.addListener('message', function (from, to, message) {
 		case "logout": logout(from);
 			break;
 		case "rollcall": rollcall(from);
+			break;
+		case "lol": mtgoxtest();
+			break;
+		case "lol1": mtgoxtest1();
 			break;
 
 	}
@@ -219,28 +226,6 @@ function login(nick, from) {
 function logout(nick) {
 	users.pop(nick);
 	bot.say(channel, nick + ": You are now logged out.");
-}
-
-
-// Not used yet.
-// Retrieve GPG key from mit.pgp.edu
-
-function getGPGkey(keyid, cb) {
-	
-	var process = exec("gpg --keyserver pgp.mit.edu --recv-key 0x" + keyid, function(err, stdout, stderr) {
-
-		console.log(stdout);
-		if(err)
-			console.log(err)
-		if(stderr)
-			console.log(stderr);
-
-		cb();
-		
-		
-
-	});
-
 }
 
 // Catch exceptions
