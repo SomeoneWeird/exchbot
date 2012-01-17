@@ -74,7 +74,7 @@ bot.addListener('message', function (from, to, message) {
 
 // Check if users logged in...
 
-function loggedin(from) {
+function isLoggedIn(from) {
 	
 	for(var i = 0; i < users.length; i++) {
 		if(loggedin[i].user==from) {
