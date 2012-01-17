@@ -7,7 +7,7 @@ var carrier = require('carrier');
 var microtime = require('microtime');
 var gist = require('gist');
 var mtgoxAPI = require('./mtgox.js');
-var mtgox = new mtgoxAPI({key : '93816bb2-0f46-4d81-b292-6e5256bda91a', secret : 'SaXHKw2vW7vXseK7IhiNf/TY7bgSqgSm+yvaFARgzw08RFZ04Z+MdKMqXY4aeRLDsIgXyU2SVphdBr81KSozyg=='});
+var mtgox = new mtgoxAPI({key : 'key', secret : 'secret'}); // yeah... remind me not to commit my api secret next time...
 
 var db = new mysql.Database({
 					hostname: 'localhost',
@@ -65,10 +65,6 @@ bot.addListener('message', function (from, to, message) {
 		case "logout": logout(from);
 			break;
 		case "rollcall": rollcall(from);
-			break;
-		case "lol": mtgoxtest();
-			break;
-		case "lol1": mtgoxtest1();
 			break;
 
 	}
