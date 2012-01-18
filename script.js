@@ -47,44 +47,65 @@ db.connect();
 // Add IRC listeners
 
 bot.addListener('message', function (from, to, message) { 
-
-	if(!message.substring(0,1)=="\$")
-		return;
-
-	message = message.substring(1);
-	var cmd = message.split(' ')[0];
-
-	switch(cmd) {
-
-		case "register": register(from, to, message);
-			break;
-		case "login": requestauth(from, to, message);
-			break;
-		case "verify": verifyauth(from, to, message);
-			break;
-		case "logout": logout(from);
-			break;
-		case "rollcall": rollcall(from);
-			break;
-	
-	}
-
-
+	parseMessage(from, message);
 });
+  	
+bot.addListener('pm', function (from, message) { 
+	parseMessage(from, message);
+});
+
+// Parse IRC Message
+  	
+function parseMessage(from, message) {
+
+   if(!message.substring(0,1)=="\$")
+     return;
+
+   var cmd = message.substring(1).split(" ")[0];
+   console.log(cmd);
+
+   switch(cmd) {
+     case "register": register(from, message);
+       	break;
+     case "login": requestauth(from, message);
+       	break;
+	 case "verify": verifyauth(from, message);
+       	break;
+     case "logout": logout(from);
+       	break;
+     case "whoami": whoami(from);
+       	break;
+     case "addmtgox": addMtGox(from, message);
+      	break;
+     case "balance": balance(from, message);
+     	break;
+   }	
+}
 
 // Check if users logged in...
 
 function isLoggedIn(from) {
-	
-	for(var i = 0; i < users.length; i++) {
-		if(loggedin[i].user==from) {
-			return true;
-		}
-		return false;
-	}
+
+        for(var i = 0; i < users.length; i++) {
+                if(users[i].user==from) {
+                        return true;
+                }
+        }
+        return false;
 }
 
-function register(from, to, message) { 
+// Get User Object..
+
+function getUser(from) {
+	for(var i = 0; i < users.length; i++) {
+		if(users[i].user==from) {
+			return users[i];
+		}
+	}
+	return 1;
+}
+
+function register(from, message) { 
 
 	var args = message.split(" "),
 	    nick = args[1],
@@ -137,7 +158,7 @@ function register(from, to, message) {
 
 // Request GPG authentication string
 
-function requestauth(from, to, message) {
+function requestauth(from, message) {
 
 	var args = message.split(" "),
 	    nick = args[1],
@@ -181,7 +202,7 @@ function requestauth(from, to, message) {
 	    
 }
 
-function verifyauth(from, to, message) {
+function verifyauth(from, message) {
 	
 		var args = message.split(" "),
 	    verify = args[1],
@@ -222,18 +243,98 @@ function verifyauth(from, to, message) {
 
 function login(nick, from) {
 	
-	var user = new Object();
-	user.nick = nick;
-	user.user = from;
-	users.push(JSON.stringify(user)); 
+	var temp;
+
+	db.query().
+	    	select("mtgox").
+	    		from('users').
+	    			where("nick = ?", [ nick ] ).
+	    				execute(function(error, rows, cols) {
+	    					temp = rows[0].mtgox.split(':');
+	    			});
+	
+	users.push({
+            nick : nick,
+            user : from,
+            MtGox: new mtgoxAPI({ key: temp[0], secret: temp[1]})
+    });
 
 }
 
-// Log the user out...
 
-function logout(nick) {
-	users.pop(nick);
-	bot.say(channel, nick + ": You are now logged out.");
+// Set MtGox API stuff.
+	
+
+	  	
+function addMtGox(from, message) {
+	  	
+	  	
+   //if(isLoggedIn(from)) {
+  	
+     var msg = message.split(" ");
+  	
+     var key = msg[1], secret = msg[2];
+ 	
+           db.query().
+                   	insert('users',
+                       [ 'mtgox' ],
+                       [ key + ":" + secret ]
+                   	).
+                   	execute(function(error, result) {
+  	
+                         if (error) {
+                               console.log('ERROR: ' + error);
+                               return;
+                         } else {
+  	
+                           console.log(from + " added MtGox api auth: " + key + ":" + secret);
+                           bot.say(channel, from + ": Successfully added MtGox api details.");
+  	
+                 		}
+                   	});
+ 	
+   //} else
+	//bot.say(channel, from + ": You need to be logged in...");
+ }
+
+// Log the user out...
+function logout(from) {
+   if(isLoggedIn(from)) {
+     users.pop(nick);
+     bot.say(channel, nick + ": You are now logged out.");
+   } else 
+     bot.say(channel, nick + ": You need to be logged in...");
+}
+
+// Who is the user...?
+
+function whoami(from) {
+	if(isLoggedIn(from)) {
+		var user = getUser(from);
+		bot.say(channel, from + ": You are logged in as " + user.nick);
+	} else {
+		bot.say(channel, from + ": You are not logged in...");
+	}
+}
+
+// Get users balance
+
+function balance(from, message) {
+	
+	var user = getUser(from);
+	if(user==1) {
+		bot.say(channel, from + ": You need to be logged in...");
+		return;
+	}
+	user.MtGox.getBalance({
+        data : function(data) {
+                bot.say(channel, from + ": " + util.inspect(data));
+        }
+	});
+
+	bot.say(channel, util.inspect(user));
+	bot.say(channel, util.inspect(user.MtGox));
+
 }
 
 // Catch exceptions
