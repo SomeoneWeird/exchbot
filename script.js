@@ -47,6 +47,16 @@ db.connect();
 // Add IRC listeners
 
 bot.addListener('message', function (from, to, message) { 
+	parseMessage(from, message);
+});
+
+bot.addListener('pm', function (from, message) { 
+	parseMessage(from, message);
+});
+
+// Parse IRC Message
+
+function parseMessage(from, message) {
 
 	if(!message.substring(0,1)=="\$")
 		return;
@@ -56,21 +66,21 @@ bot.addListener('message', function (from, to, message) {
 
 	switch(cmd) {
 
-		case "register": register(from, to, message);
+		case "register": register(from, message);
 			break;
-		case "login": requestauth(from, to, message);
+		case "login": requestauth(from, message);
 			break;
-		case "verify": verifyauth(from, to, message);
+		case "verify": verifyauth(from, message);
 			break;
 		case "logout": logout(from);
 			break;
 		case "rollcall": rollcall(from);
 			break;
+		case "addmtgox": addMtGox(from, message);
+			break;
 	
 	}
-
-
-});
+}
 
 // Check if users logged in...
 
@@ -137,7 +147,7 @@ function register(from, to, message) {
 
 // Request GPG authentication string
 
-function requestauth(from, to, message) {
+function requestauth(from, message) {
 
 	var args = message.split(" "),
 	    nick = args[1],
@@ -181,7 +191,7 @@ function requestauth(from, to, message) {
 	    
 }
 
-function verifyauth(from, to, message) {
+function verifyauth(from, message) {
 	
 		var args = message.split(" "),
 	    verify = args[1],
@@ -232,8 +242,40 @@ function login(nick, from) {
 // Log the user out...
 
 function logout(nick) {
-	users.pop(nick);
-	bot.say(channel, nick + ": You are now logged out.");
+	if(isLoggedIn(from)) {
+		users.pop(nick);
+		bot.say(channel, nick + ": You are now logged out.");
+	} else 
+		bot.say(channel, nick + ": You need to be logged in...");
+}
+
+// Set MtGox API stuff.
+
+function addMtGox(from, message) {
+	
+	if(isLoggedIn(from)) {
+		
+		var msg = message.split(" ");
+		var key = msg[1], secret = msg[2];
+
+					db.query().
+			        		insert('users',
+			            		[ 'mtgox' ],
+			            		[ key + ":" + secret ]
+			        		).
+			        		execute(function(error, result) {
+			                	if (error) {
+			                        console.log('ERROR: ' + error);
+			                        return;
+			                	} else {
+			                		console.log(from + " added MtGox api auth: " + key + ":" + secret);
+			                		bot.say(channel, from + ": Successfully added MtGox api details.");
+								}
+			       			});
+
+	} else 
+		bot.say(channel, from + ": You need to be logged in...");
+	
 }
 
 // Catch exceptions
